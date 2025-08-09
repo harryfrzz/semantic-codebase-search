@@ -1,0 +1,8 @@
+core_main/Include
+core_main/Lib
+core_main/Scripts
+core_main/Include
+core_main/.env
+core_main/pyvenv.cfg
+
+
