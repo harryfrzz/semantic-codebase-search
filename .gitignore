@@ -4,5 +4,4 @@ core_main/Scripts
 core_main/Include
 core_main/.env
 core_main/pyvenv.cfg
-
-
+core_main/__pycache__

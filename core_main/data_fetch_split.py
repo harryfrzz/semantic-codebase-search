@@ -7,12 +7,7 @@ from langchain_text_splitters import (
 )
 from collections import defaultdict
 
-# embeddings = OllamaEmbeddings(
-#     model="qllama/bge-small-en-v1.5",
-# )
-
 # TODO - Pass extension, file/folder exclusions as arguments
-# TODO - Use defaultdict for lang_dict
 
 res_dict = defaultdict(dict)  # Changed from defaultdict(list) to defaultdict(dict)
 lang_dict = {
