@@ -97,6 +97,3 @@ def split_text_by_language(file_extension_dict):
 
 file_data = walkthrough_files(extensions=[".py", ".js", ".ts",".txt"])
 splitted_text = split_text_by_language(file_data)
-for doc in splitted_text:
-    print(f"File: {doc.metadata['filename']}.{doc.metadata['extension']}")
-    print(f"{doc.page_content}")
