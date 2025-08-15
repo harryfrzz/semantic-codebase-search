@@ -13,8 +13,6 @@ embeddings = OllamaEmbeddings(
     model="qllama/bge-small-en-v1.5",
 )
 
-
-# Implement embedding functionality using bge model
 def embed_code_chunks():
     index = faiss.IndexFlatL2(len(embeddings.embed_query("hello world")))
     vector_store = FAISS(
@@ -24,13 +22,14 @@ def embed_code_chunks():
         index_to_docstore_id={},
     )
 
-    file_data = walkthrough_files(extensions=[".py", ".js", ".ts",".txt"])
-    documents_list = []
+    file_data = walkthrough_files(extensions=[".py", ".js", ".ts",".txt",".go"])
     splitted_text = split_text_by_language(file_data)
+    documents_list = []
     for doc in splitted_text:
         document = Document(page_content=doc.page_content,
         metadata={
             "filename" : doc.metadata['filename'],
+            "path" : doc.metadata['path'],
             "extension": doc.metadata['extension']
             }
         )
@@ -40,10 +39,11 @@ def embed_code_chunks():
 
     
     results = vector_store.similarity_search(
-    input("enter query"),
-    k=2
+        input("enter query"),
+        k=2
     )
     for res in results:
-        print(f"* {res.page_content} [{res.metadata}]")
+        print(res.page_content,"\n",f"{res.metadata['filename']}\n",res.metadata['path'])
+
 embed_code_chunks()
         
