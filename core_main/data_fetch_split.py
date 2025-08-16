@@ -7,12 +7,7 @@ from langchain_text_splitters import (
 )
 from collections import defaultdict
 
-# embeddings = OllamaEmbeddings(
-#     model="qllama/bge-small-en-v1.5",
-# )
-
 # TODO - Pass extension, file/folder exclusions as arguments
-# TODO - Use defaultdict for lang_dict
 
 res_dict = defaultdict(dict)  # Changed from defaultdict(list) to defaultdict(dict)
 lang_dict = {
@@ -66,7 +61,7 @@ def walkthrough_files(extensions=None):
                     with open(file_path, "r", errors="ignore") as f:
                         file_content = f.read()
                     
-                    res_dict[file_ext][filename] = file_content
+                    res_dict[file_ext][file_path] = file_content
                 except Exception as e:
                     print(f"Error reading file {file_path}: {e}")
     return res_dict
@@ -79,29 +74,25 @@ def split_text_by_language(file_extension_dict):
         if language:
             code_splitter = RecursiveCharacterTextSplitter.from_language(
                 language=language, 
-                chunk_size=300, 
+                chunk_size=500, 
                 chunk_overlap=0
             )
         else:
             code_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=300, 
+                chunk_size=500, 
                 chunk_overlap=0
             )
         
-        for filename, code in files.items():
+        for file_path, code in files.items():
+            filename = os.path.basename(file_path)
             docs = code_splitter.create_documents([code])
             for doc in docs:
                 doc.metadata = {
                     "filename": filename,
+                    "path": file_path,
                     "extension": extension,
                     "language": language.value if language else "text"
                 }
             all_documents.extend(docs)
     
     return all_documents
-
-file_data = walkthrough_files(extensions=[".py", ".js", ".ts",".txt"])
-splitted_text = split_text_by_language(file_data)
-for doc in splitted_text:
-    print(f"File: {doc.metadata['filename']}.{doc.metadata['extension']}")
-    print(f"{doc.page_content}")

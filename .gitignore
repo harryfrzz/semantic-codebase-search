@@ -1,8 +1,13 @@
+# ignore unnecessary core_main python files
 core_main/Include
 core_main/Lib
 core_main/Scripts
 core_main/Include
 core_main/.env
 core_main/pyvenv.cfg
+core_main/__pycache__
 
+# ignore unnecessary go files
+go.mod
+go.sum
 
