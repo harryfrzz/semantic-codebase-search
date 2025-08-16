@@ -37,13 +37,5 @@ def embed_code_chunks():
 
     vector_store.add_documents(documents=documents_list)
 
-    
-    results = vector_store.similarity_search(
-        input("enter query"),
-        k=2
-    )
-    for res in results:
-        print(res.page_content,"\n",f"{res.metadata['filename']}\n",res.metadata['path'])
-
-embed_code_chunks()
+    return vector_store
         
