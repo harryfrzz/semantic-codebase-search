@@ -7,7 +7,8 @@ from langchain_text_splitters import (
 )
 from collections import defaultdict
 
-# TODO - Pass extension, file/folder exclusions as arguments
+# TODO - file/folder exclusions as arguments or hardcoded
+# DONE - Now all files are embedded except the files in the exclusion list
 
 res_dict = defaultdict(dict)  # Changed from defaultdict(list) to defaultdict(dict)
 lang_dict = {
@@ -47,23 +48,22 @@ lang_dict = {
 # Implemented walkthrough of all files with folder exclusions
 def walkthrough_files(extensions=None):
     current_working_dir = os.getcwd()
-    exclude = set(['Include','Lib','Scripts'])
+    exclude = set(['Include','Lib','Scripts', '__pycache__', '.git', 'node_modules', '.vscode','go.mod','go.sum'])
     
     for root, dirs, files in os.walk(current_working_dir):
         dirs[:] = [d for d in dirs if d not in exclude]
         for file in files:
-            if extensions is None or file.endswith(tuple(extensions)):
-                file_path = os.path.join(root, file)
-                filename, file_ext = os.path.splitext(file)
-                file_ext = file_ext.lstrip('.')
+            file_path = os.path.join(root, file)
+            filename, file_ext = os.path.splitext(file)
+            file_ext = file_ext.lstrip('.')
                 
-                try:
-                    with open(file_path, "r", errors="ignore") as f:
-                        file_content = f.read()
+            try:
+                with open(file_path, "r", errors="ignore") as f:
+                    file_content = f.read()
                     
-                    res_dict[file_ext][file_path] = file_content
-                except Exception as e:
-                    print(f"Error reading file {file_path}: {e}")
+                res_dict[file_ext][file_path] = file_content
+            except Exception as e:
+                print(f"Error reading file {file_path}: {e}")
     return res_dict
 
 def split_text_by_language(file_extension_dict):

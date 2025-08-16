@@ -8,7 +8,6 @@ from langchain_community.docstore.in_memory import InMemoryDocstore
 
 from langchain_core.documents import Document
 
-
 embeddings = OllamaEmbeddings(
     model="qllama/bge-small-en-v1.5",
 )
@@ -22,7 +21,7 @@ def embed_code_chunks():
         index_to_docstore_id={},
     )
 
-    file_data = walkthrough_files(extensions=[".py", ".js", ".ts",".txt",".go"])
+    file_data = walkthrough_files()
     splitted_text = split_text_by_language(file_data)
     documents_list = []
     for doc in splitted_text:
