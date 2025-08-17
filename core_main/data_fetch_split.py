@@ -1,6 +1,7 @@
 # This file is for going through all the files in a directory, 
 # open and read it contents and converting that data to vectors and then using faiss to store the vectors and for semantic search
 import os
+import sys
 from langchain_text_splitters import (
     Language,
     RecursiveCharacterTextSplitter,
@@ -8,7 +9,7 @@ from langchain_text_splitters import (
 from collections import defaultdict
 
 # TODO - file/folder exclusions as arguments or hardcoded
-# DONE - Now all files are embedded except the files in the exclusion list
+# TODO - Better file & folder exclusion
 
 res_dict = defaultdict(dict)  # Changed from defaultdict(list) to defaultdict(dict)
 lang_dict = {
@@ -46,17 +47,17 @@ lang_dict = {
 }
 
 # Implemented walkthrough of all files with folder exclusions
-def walkthrough_files(extensions=None):
+def walkthrough_files():
     current_working_dir = os.getcwd()
     exclude = set(['Include','Lib','Scripts', '__pycache__', '.git', 'node_modules', '.vscode','go.mod','go.sum'])
-    
     for root, dirs, files in os.walk(current_working_dir):
+        print(f"Scanning directory: {root}")
         dirs[:] = [d for d in dirs if d not in exclude]
         for file in files:
             file_path = os.path.join(root, file)
             filename, file_ext = os.path.splitext(file)
             file_ext = file_ext.lstrip('.')
-                
+            
             try:
                 with open(file_path, "r", errors="ignore") as f:
                     file_content = f.read()

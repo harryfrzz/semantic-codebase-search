@@ -1,9 +1,5 @@
 package main
 
-// TODO - Need to add more colours
-// TODO - Need to make the title look better
-// TODO - Improved layout
-
 import (
 	"fmt"
 	"log"
@@ -315,7 +311,6 @@ func (m model) View() string {
 	case resultView:
 		// Container style for the entire result view
 		containerStyle := lipgloss.NewStyle().
-			Padding(1).
 			Margin(1)
 		// Viewport content
 		viewportContent := m.viewport.View()
