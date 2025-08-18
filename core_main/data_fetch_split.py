@@ -1,7 +1,6 @@
 # This file is for going through all the files in a directory, 
 # open and read it contents and converting that data to vectors and then using faiss to store the vectors and for semantic search
 import os
-import sys
 from langchain_text_splitters import (
     Language,
     RecursiveCharacterTextSplitter,
@@ -15,6 +14,8 @@ res_dict = defaultdict(dict)  # Changed from defaultdict(list) to defaultdict(di
 lang_dict = {
     "py": Language.PYTHON, 
     "ts": Language.TS, 
+    "tsx" : Language.TS,
+    "jsx" : Language.JS,
     "js": Language.JS,
     "cpp": Language.CPP,
     "cc": Language.CPP,
@@ -49,8 +50,9 @@ lang_dict = {
 # Implemented walkthrough of all files with folder exclusions
 def walkthrough_files():
     current_working_dir = os.getcwd()
+    workspace_dir = "/workspace" if os.path.exists("/workspace") and os.listdir("/workspace") else os.getcwd()
     exclude = set(['Include','Lib','Scripts', '__pycache__', '.git', 'node_modules', '.vscode','go.mod','go.sum'])
-    for root, dirs, files in os.walk(current_working_dir):
+    for root, dirs, files in os.walk(workspace_dir):
         print(f"Scanning directory: {root}")
         dirs[:] = [d for d in dirs if d not in exclude]
         for file in files:
@@ -75,13 +77,13 @@ def split_text_by_language(file_extension_dict):
         if language:
             code_splitter = RecursiveCharacterTextSplitter.from_language(
                 language=language, 
-                chunk_size=500, 
-                chunk_overlap=0
+                chunk_size=1000, 
+                chunk_overlap=100
             )
         else:
             code_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=500, 
-                chunk_overlap=0
+                chunk_size=1000, 
+                chunk_overlap=100
             )
         
         for file_path, code in files.items():

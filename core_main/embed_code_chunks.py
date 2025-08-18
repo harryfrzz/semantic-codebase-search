@@ -9,7 +9,7 @@ from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_core.documents import Document
 
 embeddings = OllamaEmbeddings(
-    model="qllama/bge-small-en-v1.5",
+    model="all-minilm:33m",
 )
 
 def embed_code_chunks():

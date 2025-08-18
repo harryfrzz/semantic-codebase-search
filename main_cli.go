@@ -1,5 +1,7 @@
 package main
 
+// Add current working dir in TUI
+
 import (
 	"fmt"
 	"log"
@@ -122,21 +124,27 @@ func searchCodebase(query string) tea.Cmd {
 				continue // Try next Python command
 			}
 
-			entryPointPath := filepath.Join(wd, "core_main", "entry_point.py")
+			// Try to find entry_point.py in the fixed app location first
+			entryPointPath := "/app/core_main/entry_point.py"
 
-			// Check if the file exists
+			// Check if the file exists at the fixed location
 			if _, err := os.Stat(entryPointPath); os.IsNotExist(err) {
-				lastErr = fmt.Errorf("entry_point.py not found at: %s", entryPointPath)
-				continue
+				// Fallback: try relative path (for local development)
+				entryPointPath = filepath.Join(wd, "core_main", "entry_point.py")
+				if _, err := os.Stat(entryPointPath); os.IsNotExist(err) {
+					lastErr = fmt.Errorf("entry_point.py not found at: %s or /app/core_main/entry_point.py", entryPointPath)
+					continue
+				}
 			}
 
 			// Execute the Python script
 			cmd := exec.Command(pythonCmd, entryPointPath, query)
-			cmd.Dir = wd
+			cmd.Dir = wd // Keep current working directory for the analysis
 
 			// Set environment variables
 			env := os.Environ()
 			env = append(env, "PYTHONIOENCODING=utf-8")
+			env = append(env, "PYTHONPATH=/app:$PYTHONPATH") // Add Python path
 			cmd.Env = env
 
 			output, err := cmd.CombinedOutput()
@@ -156,7 +164,7 @@ func searchCodebase(query string) tea.Cmd {
 		// Return detailed error information
 		errorMsg := fmt.Sprintf("PYTHON SCRIPT ERROR\n")
 		errorMsg += strings.Repeat("=", 50) + "\n\n"
-		errorMsg += fmt.Sprintf("Command: %s\n", "python core_main/entry_point.py")
+		errorMsg += fmt.Sprintf("Command: %s\n", "python /app/core_main/entry_point.py")
 		errorMsg += fmt.Sprintf("Working Directory: %s\n", wd)
 		errorMsg += fmt.Sprintf("Query: %s\n\n", query)
 

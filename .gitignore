@@ -11,3 +11,6 @@ core_main/__pycache__
 go.mod
 go.sum
 
+run-search.sh
+start-ollama.sh
+test-setup.sh
