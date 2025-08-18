@@ -2,27 +2,30 @@ import os
 import sys
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_ollama.llms import OllamaLLM
 from embed_code_chunks import embed_code_chunks
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 load_dotenv()
 
 # TODO - Improve responses
 # TODO - Integrate local LLM reasoning
 
+
 client = InferenceClient(
     provider="auto",
     api_key=os.environ["HF_TOKEN"],
 )
+
+# Initialize AI model using OllamaLLM (Currently running model for huggingfacehub)
+# model = OllamaLLM(model="gpt-oss:20b")
 
 def search_codebase(user_query):
     vector_store = embed_code_chunks()
     results = vector_store.similarity_search(user_query, k=5)
         
     context = ""
-    for i, doc in enumerate(results, 1):
-        context += f"\n### Result {i}\n"
+    for doc in results:
         context += f"**File:** {doc.metadata.get('filename', 'Unknown')}\n"
         context += f"**Path:** `{doc.metadata.get('path', 'Unknown')}`\n"
         context += f"**Extension:** {doc.metadata.get('extension', 'Unknown')}\n"
@@ -46,6 +49,9 @@ def get_response(user_query, context):
 
             Respond in markdown format only using standard ASCII characters.
             """
+    
+    # To add local AI reasoning support
+    # prompt = ChatPromptTemplate.from_template(template)
 
     completion = client.chat.completions.create(
         model="openai/gpt-oss-20b",

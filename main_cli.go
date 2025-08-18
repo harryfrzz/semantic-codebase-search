@@ -1,8 +1,6 @@
 package main
 
-// TODO - Need to add more colours
-// TODO - Need to make the title look better
-// TODO - Improved layout
+// Add current working dir in TUI
 
 import (
 	"fmt"
@@ -19,6 +17,24 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+)
+
+// Define styles
+var (
+	titleStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#8c00ffff")). // Magenta
+			Padding(1, 2).
+			Margin(1, 0).
+			Align(lipgloss.Center)
+
+	searchIconStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#8c00ffff")). // Red
+			Bold(true)
+
+	spinnerStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#8c00ffff")). // Teal
+			Bold(true)
 )
 
 type state int
@@ -52,12 +68,17 @@ func initialModel() model {
 	ti.CharLimit = 200
 	ti.Width = 100
 
+	// Style the text input
+	ti.PromptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#8c00ffff"))
+	ti.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
+	ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#888888"))
+
 	vp := viewport.New(80, 20)
 	vp.SetContent("")
 
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#8c00ffff"))
 
 	renderer, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
@@ -103,21 +124,27 @@ func searchCodebase(query string) tea.Cmd {
 				continue // Try next Python command
 			}
 
-			entryPointPath := filepath.Join(wd, "core_main", "entry_point.py")
+			// Try to find entry_point.py in the fixed app location first
+			entryPointPath := "/app/core_main/entry_point.py"
 
-			// Check if the file exists
+			// Check if the file exists at the fixed location
 			if _, err := os.Stat(entryPointPath); os.IsNotExist(err) {
-				lastErr = fmt.Errorf("entry_point.py not found at: %s", entryPointPath)
-				continue
+				// Fallback: try relative path (for local development)
+				entryPointPath = filepath.Join(wd, "core_main", "entry_point.py")
+				if _, err := os.Stat(entryPointPath); os.IsNotExist(err) {
+					lastErr = fmt.Errorf("entry_point.py not found at: %s or /app/core_main/entry_point.py", entryPointPath)
+					continue
+				}
 			}
 
 			// Execute the Python script
 			cmd := exec.Command(pythonCmd, entryPointPath, query)
-			cmd.Dir = wd
+			cmd.Dir = wd // Keep current working directory for the analysis
 
 			// Set environment variables
 			env := os.Environ()
 			env = append(env, "PYTHONIOENCODING=utf-8")
+			env = append(env, "PYTHONPATH=/app:$PYTHONPATH") // Add Python path
 			cmd.Env = env
 
 			output, err := cmd.CombinedOutput()
@@ -137,7 +164,7 @@ func searchCodebase(query string) tea.Cmd {
 		// Return detailed error information
 		errorMsg := fmt.Sprintf("PYTHON SCRIPT ERROR\n")
 		errorMsg += strings.Repeat("=", 50) + "\n\n"
-		errorMsg += fmt.Sprintf("Command: %s\n", "python core_main/entry_point.py")
+		errorMsg += fmt.Sprintf("Command: %s\n", "python /app/core_main/entry_point.py")
 		errorMsg += fmt.Sprintf("Working Directory: %s\n", wd)
 		errorMsg += fmt.Sprintf("Query: %s\n\n", query)
 
@@ -251,30 +278,88 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	switch m.state {
 	case inputView:
-		view := "Codebase Search Assistant\n"
-		view += strings.Repeat("=", 50) + "\n\n"
+		asciiTitle := `
+ ██████╗ ██████╗ ██████╗ ███████╗██████╗  █████╗ ███████╗███████╗
+██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔════╝██╔════╝
+██║     ██║   ██║██║  ██║█████╗  ██████╔╝███████║███████╗█████╗  
+██║     ██║   ██║██║  ██║██╔══╝  ██╔══██╗██╔══██║╚════██║██╔══╝  
+╚██████╗╚██████╔╝██████╔╝███████╗██████╔╝██║  ██║███████║███████╗
+ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝
+                                                                   
+███████╗███████╗ █████╗ ██████╗  ██████╗██╗  ██╗                 
+██╔════╝██╔════╝██╔══██╗██╔══██╗██╔════╝██║  ██║                 
+███████╗█████╗  ███████║██████╔╝██║     ███████║                 
+╚════██║██╔══╝  ██╔══██║██╔══██╗██║     ██╔══██║                 
+███████║███████╗██║  ██║██║  ██║╚██████╗██║  ██║                 
+╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝`
+
+		view := titleStyle.Render(asciiTitle) + "\n"
 
 		if m.loading {
-			view += fmt.Sprintf("%s Searching codebase...\n", m.spinner.View())
+			loadingText := fmt.Sprintf("%s %s", spinnerStyle.Render(m.spinner.View()), "Searching codebase...")
+			view += lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#98D8C8")).
+				Bold(true).
+				Render(loadingText) + "\n"
 		} else {
+			// Style the input field
+			inputTitle := searchIconStyle.Render("Search Query:")
+			view += inputTitle + "\n"
 			view += fmt.Sprintf("%s\n\n", m.textInput.View())
-			view += "(Press Enter to search, Esc to quit)"
+
+			helpText := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#6b51ffff")).
+				Italic(true).
+				Render("(Press Enter to search, Esc to quit)")
+			view += helpText
 		}
 
 		return view
 
 	case resultView:
-		view := "Search Results (Rendered with Markdown)\n"
-		view += strings.Repeat("=", 50) + "\n\n"
-		view += m.viewport.View()
-		view += "\n\n(Press Enter to search again, Esc to quit)"
-		return view
+		// Container style for the entire result view
+		containerStyle := lipgloss.NewStyle().
+			Margin(1)
+		// Viewport content
+		viewportContent := m.viewport.View()
+
+		// Help text with proper spacing
+		helpText := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#6b51ffff")).
+			Italic(true).
+			Align(lipgloss.Center).
+			Render("(Press Enter to search again, Esc to quit)")
+
+		// Combine all elements with proper spacing
+		content := lipgloss.JoinVertical(
+			lipgloss.Center,
+			"",
+			viewportContent,
+			"",
+			helpText,
+		)
+
+		return containerStyle.Render(content)
 
 	case errorView:
-		view := "Error Details\n"
-		view += strings.Repeat("=", 50) + "\n\n"
+		errorTitle := lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(lipgloss.Color("#FF0000")).
+			Padding(0, 2).
+			Margin(0, 0, 1, 0).
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("#AA0000")).
+			Render("ERROR DETAILS")
+
+		view := errorTitle + "\n\n"
 		view += m.viewport.View()
-		view += "\n\n(Press Enter to try again, Esc to quit)"
+
+		helpText := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#6b51ffff")).
+			Italic(true).
+			Render("\n(Press Enter to try again, Esc to quit)")
+		view += helpText
 		return view
 	}
 

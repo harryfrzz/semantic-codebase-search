@@ -7,12 +7,15 @@ from langchain_text_splitters import (
 )
 from collections import defaultdict
 
-# TODO - Pass extension, file/folder exclusions as arguments
+# TODO - file/folder exclusions as arguments or hardcoded
+# TODO - Better file & folder exclusion
 
 res_dict = defaultdict(dict)  # Changed from defaultdict(list) to defaultdict(dict)
 lang_dict = {
     "py": Language.PYTHON, 
     "ts": Language.TS, 
+    "tsx" : Language.TS,
+    "jsx" : Language.JS,
     "js": Language.JS,
     "cpp": Language.CPP,
     "cc": Language.CPP,
@@ -45,25 +48,25 @@ lang_dict = {
 }
 
 # Implemented walkthrough of all files with folder exclusions
-def walkthrough_files(extensions=None):
+def walkthrough_files():
     current_working_dir = os.getcwd()
-    exclude = set(['Include','Lib','Scripts'])
-    
-    for root, dirs, files in os.walk(current_working_dir):
+    workspace_dir = "/workspace" if os.path.exists("/workspace") and os.listdir("/workspace") else os.getcwd()
+    exclude = set(['Include','Lib','Scripts', '__pycache__', '.git', 'node_modules', '.vscode','go.mod','go.sum'])
+    for root, dirs, files in os.walk(workspace_dir):
+        print(f"Scanning directory: {root}")
         dirs[:] = [d for d in dirs if d not in exclude]
         for file in files:
-            if extensions is None or file.endswith(tuple(extensions)):
-                file_path = os.path.join(root, file)
-                filename, file_ext = os.path.splitext(file)
-                file_ext = file_ext.lstrip('.')
-                
-                try:
-                    with open(file_path, "r", errors="ignore") as f:
-                        file_content = f.read()
+            file_path = os.path.join(root, file)
+            filename, file_ext = os.path.splitext(file)
+            file_ext = file_ext.lstrip('.')
+            
+            try:
+                with open(file_path, "r", errors="ignore") as f:
+                    file_content = f.read()
                     
-                    res_dict[file_ext][file_path] = file_content
-                except Exception as e:
-                    print(f"Error reading file {file_path}: {e}")
+                res_dict[file_ext][file_path] = file_content
+            except Exception as e:
+                print(f"Error reading file {file_path}: {e}")
     return res_dict
 
 def split_text_by_language(file_extension_dict):
@@ -74,13 +77,13 @@ def split_text_by_language(file_extension_dict):
         if language:
             code_splitter = RecursiveCharacterTextSplitter.from_language(
                 language=language, 
-                chunk_size=500, 
-                chunk_overlap=0
+                chunk_size=1000, 
+                chunk_overlap=100
             )
         else:
             code_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=500, 
-                chunk_overlap=0
+                chunk_size=1000, 
+                chunk_overlap=100
             )
         
         for file_path, code in files.items():
