@@ -1,62 +1,58 @@
-FROM golang:1.24-alpine AS go-builder
+FROM golang:1.24-bullseye AS go-builder
 
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-
 COPY main_cli.go ./
-RUN go build -o codebase-search main_cli.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o codebase-search main_cli.go
 
-# Second stage: Python runtime with Go binary
-FROM python:3.11-slim
+FROM python:3.11-bullseye
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-# Note: HF_TOKEN should be passed at runtime with -e flag for security
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TERM=xterm-256color
+ENV COLORTERM=truecolor
 
-# Install system dependencies including curl for Ollama
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
     build-essential \
     git \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Set work directory
-WORKDIR /app
-
-# Copy Python requirements and install dependencies
-COPY core_main/requirements.txt ./core_main/requirements.txt
-RUN pip install --upgrade pip && \
-    pip install -r ./core_main/requirements.txt
-
-# Copy Python source code to a fixed location
-COPY core_main/ /app/core_main/
-
-# Copy Go binary from builder stage
-COPY --from=go-builder /app/codebase-search /usr/local/bin/codebase-search
-
-# Make the Go binary executable
-RUN chmod +x /usr/local/bin/codebase-search
-
-# Create workspace directory for mounting external codebases
-RUN mkdir -p /workspace
-
-# Copy startup script and test script
-COPY start-ollama.sh /usr/local/bin/start-ollama.sh
-COPY test-setup.sh /usr/local/bin/test-setup.sh
-RUN chmod +x /usr/local/bin/start-ollama.sh /usr/local/bin/test-setup.sh
-
-# Set workspace as working directory (for analyzing mounted codebases)
+# Create directories
+RUN mkdir -p /app/core_main /workspace
 WORKDIR /workspace
 
-# Expose ports (Ollama uses 11434, your app might use 8000)
-EXPOSE 8000 11434
+# Copy Python requirements and install
+COPY core_main/requirements.txt /app/core_main/
+RUN pip install --no-cache-dir -r /app/core_main/requirements.txt
 
-# Default command runs the startup script
-CMD ["/usr/local/bin/start-ollama.sh"]
+# Copy Python code
+COPY core_main/ /app/core_main/
+
+# Copy Go binary
+COPY --from=go-builder /app/codebase-search /usr/local/bin/codebase-search
+RUN chmod +x /usr/local/bin/codebase-search
+
+# Copy startup script
+COPY start-ollama.sh /app/
+RUN chmod +x /app/start-ollama.sh
+
+# Pre-download Ollama models during build
+RUN ollama serve & \
+    sleep 10 && \
+    ollama pull all-minilm:33m && \
+    pkill ollama
+
+# Set Python path
+ENV PYTHONPATH="/app:$PYTHONPATH"
+
+EXPOSE 11434 8000
+
+CMD ["/app/start-ollama.sh"]
 

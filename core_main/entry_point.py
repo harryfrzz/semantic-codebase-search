@@ -1,19 +1,18 @@
+from embed_code_chunks import embed_code_chunks
 import os
 import sys
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
-from embed_code_chunks import embed_code_chunks
 
 load_dotenv()
 
-# TODO - Improve responses
-# TODO - Integrate local LLM reasoning
-
+# Local index directory - embeddings are now managed by embed_code_chunks.py
+FAISS_INDEX_DIR = "/app/faiss_index"
 
 client = InferenceClient(
-    provider="auto",
+    provider="auto",    
     api_key=os.environ["HF_TOKEN"],
 )
 
@@ -21,8 +20,9 @@ client = InferenceClient(
 # model = OllamaLLM(model="gpt-oss:20b")
 
 def search_codebase(user_query):
-    vector_store = embed_code_chunks()
-    results = vector_store.similarity_search(user_query, k=5)
+    # Use the persistent embedding function from embed_code_chunks.py
+    vector_store = embed_code_chunks(batch_size=64)
+    results = vector_store.similarity_search(user_query, k=10)
         
     context = ""
     for doc in results:
