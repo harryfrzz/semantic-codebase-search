@@ -12,7 +12,7 @@ import os
 import hashlib
 import json
 
-FAISS_INDEX_DIR = "/app/faiss_index"
+FAISS_INDEX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "faiss_index")
 
 embeddings = OllamaEmbeddings(
     model="all-minilm:33m",
@@ -55,7 +55,7 @@ def embed_code_chunks(batch_size=64):
     print("Starting embedding process...")
     start_time = time.time()
     
-    # Create /app/faiss_index directory if it doesn't exist
+    # Create faiss_index directory if it doesn't exist
     os.makedirs(FAISS_INDEX_DIR, exist_ok=True)
     
     # Check if embeddings need to be refreshed
