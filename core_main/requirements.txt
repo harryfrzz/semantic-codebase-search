@@ -1,6 +1,3 @@
 langchain-ollama
 langchain-community 
 faiss-cpu
-python-dotenv
-ollama
-huggingface-hub
