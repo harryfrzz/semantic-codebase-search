@@ -10,7 +10,7 @@ from collections import defaultdict
 # TODO - file/folder exclusions as arguments or hardcoded
 # TODO - Better file & folder exclusion
 
-res_dict = defaultdict(dict)  # Changed from defaultdict(list) to defaultdict(dict)
+res_dict = defaultdict(dict)
 lang_dict = {
     "py": Language.PYTHON, 
     "ts": Language.TS, 
@@ -49,10 +49,12 @@ lang_dict = {
 
 # Implemented walkthrough of all files with folder exclusions
 def walkthrough_files():
-    current_working_dir = os.getcwd()
-    workspace_dir = "/workspace" if os.path.exists("/workspace") and os.listdir("/workspace") else os.getcwd()
-    exclude = set(['Include','Lib','Scripts', '__pycache__', '.git', 'node_modules', '.vscode','go.mod','go.sum'])
-    for root, dirs, files in os.walk(workspace_dir):
+    if os.path.exists("/workspace") and os.listdir("/workspace"):
+        target_dir = "/workspace"
+    else:
+        target_dir = os.getcwd()
+    exclude = set(['Include','Lib','Scripts', '__pycache__', '.git', 'node_modules', '.vscode','go.mod','go.sum','.husky',])
+    for root, dirs, files in os.walk(target_dir):
         print(f"Scanning directory: {root}")
         dirs[:] = [d for d in dirs if d not in exclude]
         for file in files:
@@ -77,13 +79,13 @@ def split_text_by_language(file_extension_dict):
         if language:
             code_splitter = RecursiveCharacterTextSplitter.from_language(
                 language=language, 
-                chunk_size=1000, 
-                chunk_overlap=100
+                chunk_size=500, 
+                chunk_overlap=0
             )
         else:
             code_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000, 
-                chunk_overlap=100
+                chunk_size=500, 
+                chunk_overlap=0
             )
         
         for file_path, code in files.items():

@@ -6,10 +6,7 @@ core_main/Include
 core_main/.env
 core_main/pyvenv.cfg
 core_main/__pycache__
-
-# ignore unnecessary go files
-go.mod
-go.sum
+faiss_index
 
 run-search.sh
 start-ollama.sh
