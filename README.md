@@ -3,11 +3,11 @@
 A simple tool for semantic code search using local AI models and embeddings.
 
 ## Tech Stack
-- **Python+** (core logic)
-- **Go+** (optional CLI)
+- **Python** (core logic)
+- **Go** (optional CLI)
 - **Ollama** (local LLM inference)
 - **FAISS** (vector search)
-- **LangChain** (embeddings, orchestration)
+- **LangChain** (embeddings)
 
 ## Setup Instructions
 
