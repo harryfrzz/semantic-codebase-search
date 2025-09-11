@@ -6,7 +6,6 @@ from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_core.documents import Document
-import time
 import os
 
 FAISS_INDEX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "faiss_index")
@@ -18,7 +17,6 @@ embeddings = OllamaEmbeddings(
 def embed_code_chunks(batch_size=32):
     os.makedirs(FAISS_INDEX_DIR, exist_ok=True)
     
-    # Try to load existing embeddings first (much faster)
     index_file = os.path.join(FAISS_INDEX_DIR, "index.faiss")
     if os.path.exists(index_file):
         print(f"⚡ Loading existing embeddings from {FAISS_INDEX_DIR}")
@@ -30,7 +28,6 @@ def embed_code_chunks(batch_size=32):
             print(f"Failed to load existing embeddings: {e}")
             print("Creating new embeddings...")
     
-    # Initialize FAISS index
     dimension = len(embeddings.embed_query("test"))
     index = faiss.IndexFlatL2(dimension)
     vector_store = FAISS(
@@ -40,7 +37,6 @@ def embed_code_chunks(batch_size=32):
         index_to_docstore_id={},
     )
 
-    # Get and process documents
     file_data = walkthrough_files()
     splitted_text = split_text_by_language(file_data)
     
@@ -62,7 +58,6 @@ def embed_code_chunks(batch_size=32):
     total_docs = len(documents_list)
     print(f"Embedding {total_docs} documents in batches of {batch_size}")
 
-    # Process documents in batches with progress
     for i in range(0, total_docs, batch_size):
         batch_end = min(i + batch_size, total_docs)
         batch_docs = documents_list[i:batch_end]
@@ -77,7 +72,6 @@ def embed_code_chunks(batch_size=32):
             print(f"Error processing batch {batch_num}: {e}")
             continue
     
-    # Save embeddings to persistent storage
     try:
         print(f"Saving embeddings to {FAISS_INDEX_DIR}")
         vector_store.save_local(FAISS_INDEX_DIR)
