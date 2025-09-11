@@ -9,6 +9,10 @@ A simple tool for semantic code search using local AI models and embeddings.
 - **FAISS** (vector search)
 - **LangChain** (embeddings)
 
+## Embedding Model
+- **all-minilm:33b**
+## Reasoning AI Model
+- **gpt-oss:20b**
 ## Setup Instructions
 
 ### 1. Clone the repository
