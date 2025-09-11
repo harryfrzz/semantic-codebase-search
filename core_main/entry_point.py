@@ -82,7 +82,7 @@ def check_ollama_connection():
             print("Ollama is not responding")
             return False
     except requests.exceptions.ConnectionError:
-        print("✗ Cannot connect to Ollama. Make sure it's running on localhost:11434")
+        print("Cannot connect to Ollama")
         return False
 
 def main():

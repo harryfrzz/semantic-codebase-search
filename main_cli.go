@@ -1,7 +1,4 @@
 package main
-
-// Add current working dir in TUI
-
 import (
 	"fmt"
 	"log"
@@ -19,21 +16,20 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Define styles
 var (
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#8c00ffff")). // Magenta
+			Foreground(lipgloss.Color("#8c00ffff")).
 			Padding(1, 2).
 			Margin(1, 0).
 			Align(lipgloss.Center)
 
 	searchIconStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#8c00ffff")). // Red
+			Foreground(lipgloss.Color("#8c00ffff")).
 			Bold(true)
 
 	spinnerStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#8c00ffff")). // Teal
+			Foreground(lipgloss.Color("#8c00ffff")).
 			Bold(true)
 )
 
@@ -68,7 +64,6 @@ func initialModel() model {
 	ti.CharLimit = 200
 	ti.Width = 100
 
-	// Style the text input
 	ti.PromptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#8c00ffff"))
 	ti.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
 	ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#888888"))
@@ -105,31 +100,24 @@ func (m model) Init() tea.Cmd {
 
 func searchCodebase(query string) tea.Cmd {
 	return func() tea.Msg {
-		// Add a small delay to show the spinner
 		time.Sleep(500 * time.Millisecond)
 
-		// Get current working directory
 		wd, _ := os.Getwd()
 
-		// Try multiple Python commands
 		pythonCommands := []string{"python", "python3", "py"}
 
 		var lastOutput []byte
 		var lastErr error
 
 		for _, pythonCmd := range pythonCommands {
-			// Check if Python command exists
 			_, err := exec.LookPath(pythonCmd)
 			if err != nil {
-				continue // Try next Python command
+				continue
 			}
 
-			// Try to find entry_point.py in the fixed app location first
 			entryPointPath := "/app/core_main/entry_point.py"
 
-			// Check if the file exists at the fixed location
 			if _, err := os.Stat(entryPointPath); os.IsNotExist(err) {
-				// Fallback: try relative path (for local development)
 				entryPointPath = filepath.Join(wd, "core_main", "entry_point.py")
 				if _, err := os.Stat(entryPointPath); os.IsNotExist(err) {
 					lastErr = fmt.Errorf("entry_point.py not found at: %s or /app/core_main/entry_point.py", entryPointPath)
@@ -137,14 +125,12 @@ func searchCodebase(query string) tea.Cmd {
 				}
 			}
 
-			// Execute the Python script
 			cmd := exec.Command(pythonCmd, entryPointPath, query)
-			cmd.Dir = wd // Keep current working directory for the analysis
+			cmd.Dir = wd
 
-			// Set environment variables
 			env := os.Environ()
 			env = append(env, "PYTHONIOENCODING=utf-8")
-			env = append(env, "PYTHONPATH=/app:$PYTHONPATH") // Add Python path
+			env = append(env, "PYTHONPATH=/app:$PYTHONPATH")
 			cmd.Env = env
 
 			output, err := cmd.CombinedOutput()
@@ -161,7 +147,6 @@ func searchCodebase(query string) tea.Cmd {
 			break
 		}
 
-		// Return detailed error information
 		errorMsg := fmt.Sprintf("PYTHON SCRIPT ERROR\n")
 		errorMsg += strings.Repeat("=", 50) + "\n\n"
 		errorMsg += fmt.Sprintf("Command: %s\n", "python /app/core_main/entry_point.py")
@@ -213,7 +198,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tea.KeyCtrlC, tea.KeyEsc:
 				return m, tea.Quit
 			case tea.KeyEnter:
-				// Go back to input view
 				m.state = inputView
 				m.textInput.SetValue("")
 				m.textInput.Focus()
@@ -229,12 +213,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.err = msg.err
 			m.viewport.SetContent(msg.err.Error())
-			m.state = errorView // Switch to error view
+			m.state = errorView
 		} else {
-			// Render markdown content
 			rendered, err := m.renderer.Render(msg.result)
 			if err != nil {
-				// If markdown rendering fails, use plain text
 				m.viewport.SetContent(msg.result)
 			} else {
 				m.viewport.SetContent(rendered)
@@ -248,7 +230,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.Width = msg.Width
 		m.viewport.Height = msg.Height - 5
 
-		// Update renderer width
 		if m.renderer != nil {
 			renderer, err := glamour.NewTermRenderer(
 				glamour.WithAutoStyle(),
@@ -260,7 +241,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Update components based on state
 	switch m.state {
 	case inputView:
 		if m.loading {
@@ -302,7 +282,6 @@ func (m model) View() string {
 				Bold(true).
 				Render(loadingText) + "\n"
 		} else {
-			// Style the input field
 			inputTitle := searchIconStyle.Render("Search Query:")
 			view += inputTitle + "\n"
 			view += fmt.Sprintf("%s\n\n", m.textInput.View())
@@ -317,20 +296,16 @@ func (m model) View() string {
 		return view
 
 	case resultView:
-		// Container style for the entire result view
 		containerStyle := lipgloss.NewStyle().
 			Margin(1)
-		// Viewport content
 		viewportContent := m.viewport.View()
 
-		// Help text with proper spacing
 		helpText := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#6b51ffff")).
 			Italic(true).
 			Align(lipgloss.Center).
 			Render("(Press Enter to search again, Esc to quit)")
 
-		// Combine all elements with proper spacing
 		content := lipgloss.JoinVertical(
 			lipgloss.Center,
 			"",

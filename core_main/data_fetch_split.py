@@ -1,14 +1,9 @@
-# This file is for going through all the files in a directory, 
-# open and read it contents and converting that data to vectors and then using faiss to store the vectors and for semantic search
 import os
 from langchain_text_splitters import (
     Language,
     RecursiveCharacterTextSplitter,
 )
 from collections import defaultdict
-
-# TODO - file/folder exclusions as arguments or hardcoded
-# TODO - Better file & folder exclusion
 
 res_dict = defaultdict(dict)
 lang_dict = {
@@ -47,13 +42,9 @@ lang_dict = {
     "vb": Language.VISUALBASIC6
 }
 
-# Implemented walkthrough of all files with folder exclusions
 def walkthrough_files():
-    if os.path.exists("/workspace") and os.listdir("/workspace"):
-        target_dir = "/workspace"
-    else:
-        target_dir = os.getcwd()
-    exclude = set(['Include','Lib','Scripts', '__pycache__', '.git', 'node_modules', '.vscode','go.mod','go.sum','.husky',])
+    target_dir = os.getcwd()
+    exclude = set(['Include','env','venv','faiss_index','Lib','Scripts', '__pycache__', '.git', 'node_modules', '.vscode','go.mod','go.sum','.husky',])
     for root, dirs, files in os.walk(target_dir):
         print(f"Scanning directory: {root}")
         dirs[:] = [d for d in dirs if d not in exclude]
