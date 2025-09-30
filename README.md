@@ -1,6 +1,6 @@
 # Semantic Codebase Search
 
-A simple tool for semantic code search using local AI models and embeddings.
+A simple tool for semantic code search using gpt-oss and embeddings.
 
 ## Tech Stack
 - **Python** (core logic)
